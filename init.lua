@@ -91,6 +91,8 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
+-- Install a Nerd Font using: brew install --cask font-jetbrains-mono-nerd-font
+-- Then set your terminal font to "JetBrainsMono Nerd Font"
 vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
@@ -255,6 +257,14 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      current_line_blame = false, -- Toggle with `:Gitsigns toggle_current_line_blame`
+      current_line_blame_opts = {
+        virt_text = true,
+        virt_text_pos = 'eol', -- 'eol' | 'overlay' | 'right_align'
+        delay = 500,           -- Delay in milliseconds before blame is shown
+        ignore_whitespace = false,
+      },
+      current_line_blame_formatter = '<author>, <author_time:%Y-%m-%d> - <summary>',
     },
   },
 
