@@ -4,21 +4,19 @@ return {
     "folke/which-key.nvim",
     optional = true,
     config = function(_, opts)
-      -- Add JavaScript keybindings to which-key
+      -- Add JavaScript keybindings to which-key (new spec format)
       local wk = require("which-key")
-      wk.register({
-        ["<leader>j"] = {
-          name = "JavaScript",
-          a = { "Code Action" },
-          i = { "Organize Imports" },
-          f = { "Format Code" },
-          d = { "Show Diagnostic Details" },
-          l = { "List All Problems" },
-          g = { "Generate JSDoc" },
-          D = { "Debug Info" },
-          c = { "Create Config" },
-          A = { "Force Attach LSP" },
-        },
+      wk.add({
+        { "<leader>j", group = "JavaScript" },
+        { "<leader>ja", desc = "Code Action" },
+        { "<leader>ji", desc = "Organize Imports" },
+        { "<leader>jf", desc = "Format Code" },
+        { "<leader>jd", desc = "Show Diagnostic Details" },
+        { "<leader>jl", desc = "List All Problems" },
+        { "<leader>jg", desc = "Generate JSDoc" },
+        { "<leader>jD", desc = "Debug Info" },
+        { "<leader>jc", desc = "Create Config" },
+        { "<leader>jA", desc = "Force Attach LSP" },
       })
       
       -- Create a command to show JavaScript features

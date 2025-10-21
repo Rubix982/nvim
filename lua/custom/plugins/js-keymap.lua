@@ -1,5 +1,8 @@
 -- Global JavaScript keymaps and commands
 return {
+  -- Use a dummy plugin spec since we only want to run config on startup
+  "nvim-lua/plenary.nvim",
+  lazy = false,
   config = function()
     -- Create keybinding to manually trigger completion
     vim.keymap.set('i', '<C-x><C-o>', function() 
