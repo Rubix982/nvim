@@ -30,4 +30,36 @@ return {
       { "<leader>gu", "<cmd>Gitsigns undo_stage_hunk<CR>", desc = "Undo Stage Hunk" },
     },
   },
+  -- Diffview keymaps (GoLand-style diff & change sidebar)
+  {
+    'sindrets/diffview.nvim',
+    cmd = { 'DiffviewOpen', 'DiffviewFileHistory', 'DiffviewClose' },
+    keys = {
+      { '<leader>gD', '<cmd>DiffviewOpen<CR>', desc = 'Diff view (all changes)' },
+      { '<leader>gf', '<cmd>DiffviewFileHistory %<CR>', desc = 'File history (current file)' },
+      { '<leader>gF', '<cmd>DiffviewFileHistory<CR>', desc = 'File history (branch)' },
+      { '<leader>gq', '<cmd>DiffviewClose<CR>', desc = 'Close diff view' },
+    },
+    config = function()
+      require('diffview').setup {
+        enhanced_diff_hl = true,
+        view = {
+          default = { layout = 'diff2_horizontal' },
+          merge_tool = { layout = 'diff3_mixed' },
+          file_history = { layout = 'diff2_horizontal' },
+        },
+        file_panel = {
+          listing_style = 'tree',
+          tree_options = {
+            flatten_dirs = true,
+            folder_statuses = 'only_folded',
+          },
+          win_config = {
+            position = 'left',
+            width = 35,
+          },
+        },
+      }
+    end,
+  },
 }

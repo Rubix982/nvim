@@ -156,6 +156,22 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
+-- Visual polish
+vim.opt.termguicolors = true
+vim.opt.pumblend = 0       -- no popup transparency (Warp terminal compat)
+vim.opt.winblend = 0       -- no float transparency (Warp terminal compat)
+vim.opt.smoothscroll = true -- smooth ctrl-d/u scrolling (Neovim 0.10+)
+vim.opt.fillchars = {
+  eob = ' ',               -- hide ~ on empty lines
+  vert = '│',
+  horiz = '─',
+  horizup = '┴',
+  horizdown = '┬',
+  vertleft = '┤',
+  vertright = '├',
+  verthoriz = '┼',
+}
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -574,7 +590,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        -- gopls is configured in custom/plugins/go-lsp.lua
         -- Python LSP servers
         pyright = {},
         ruff = {},
@@ -634,6 +650,7 @@ require('lazy').setup({
           end,
         },
       }
+
     end,
   },
 
@@ -709,11 +726,13 @@ require('lazy').setup({
       --  into multiple repos for maintenance purposes.
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-path',
+      'onsails/lspkind.nvim',
     },
     config = function()
       -- See `:help cmp`
       local cmp = require 'cmp'
       local luasnip = require 'luasnip'
+      local lspkind = require 'lspkind'
       luasnip.config.setup {}
 
       cmp.setup {
@@ -723,6 +742,44 @@ require('lazy').setup({
           end,
         },
         completion = { completeopt = 'menu,menuone,noinsert' },
+        window = {
+          completion = cmp.config.window.bordered {
+            border = 'rounded',
+            winhighlight = 'Normal:Pmenu,FloatBorder:CmpBorder,CursorLine:CmpSel,Search:None',
+            side_padding = 0,
+            col_offset = -1,
+            scrollbar = true,
+          },
+          documentation = cmp.config.window.bordered {
+            border = 'rounded',
+            winhighlight = 'Normal:NormalFloat,FloatBorder:CmpBorder',
+            max_width = 60,
+            max_height = 20,
+          },
+        },
+        formatting = {
+          fields = { 'kind', 'abbr', 'menu' },
+          format = function(entry, vim_item)
+            local kind = lspkind.cmp_format {
+              mode = 'symbol_text',
+              maxwidth = 40,
+              ellipsis_char = '…',
+            }(entry, vim_item)
+
+            -- Split kind into icon and text: "  Function" -> icon="  ", text="Function"
+            local strings = vim.split(kind.kind, '%s', { trimempty = true })
+            kind.kind = ' ' .. (strings[1] or '') .. ' '
+            kind.menu = '  ' .. (strings[2] or '') .. ' '
+                .. ({
+                  nvim_lsp = '[LSP]',
+                  luasnip = '[Snip]',
+                  path = '[Path]',
+                  buffer = '[Buf]',
+                })[entry.source.name] or ''
+
+            return kind
+          end,
+        },
 
         -- For an understanding of why these mappings were
         -- chosen, you will need to read `:help ins-completion`
@@ -743,11 +800,9 @@ require('lazy').setup({
           --  This will expand snippets if the LSP sent a snippet.
           ['<C-y>'] = cmp.mapping.confirm { select = true },
 
-          -- If you prefer more traditional completion keymaps,
-          -- you can uncomment the following lines
-          --['<CR>'] = cmp.mapping.confirm { select = true },
-          --['<Tab>'] = cmp.mapping.select_next_item(),
-          --['<S-Tab>'] = cmp.mapping.select_prev_item(),
+          ['<CR>'] = cmp.mapping.confirm { select = true },
+          ['<Tab>'] = cmp.mapping.select_next_item(),
+          ['<S-Tab>'] = cmp.mapping.select_prev_item(),
 
           -- Manually trigger a completion from nvim-cmp.
           --  Generally you don't need this, because nvim-cmp will display
@@ -785,21 +840,12 @@ require('lazy').setup({
     end,
   },
 
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
+  { -- Colorscheme: catppuccin mocha (configured in custom/plugins/ui.lua)
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    priority = 1000,
     init = function()
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
-
-      -- You can configure highlights by doing something like:
-      vim.cmd.hi 'Comment gui=none'
+      vim.cmd.colorscheme 'catppuccin-mocha'
     end,
   },
 
@@ -848,7 +894,8 @@ require('lazy').setup({
     build = ':TSUpdate',
     opts = {
       ensure_installed = { 
-        'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc',
+        'bash', 'c', 'diff', 'go', 'gomod', 'gosum', 'gowork',
+        'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc',
         'python', 'javascript', 'typescript', 'tsx', 'json', 'yaml'
       },
       -- Autoinstall languages that are not installed
