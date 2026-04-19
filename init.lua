@@ -152,6 +152,7 @@ vim.opt.inccommand = 'split'
 
 -- Show which line your cursor is on
 vim.opt.cursorline = true
+vim.opt.laststatus = 3 -- Single global statusline (not per-window)
 
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
@@ -373,16 +374,44 @@ require('lazy').setup({
 
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
+      local actions = require 'telescope.actions'
       require('telescope').setup {
-        -- You can put your default mappings / updates / etc. in here
-        --  All the info you're looking for is in `:help telescope.setup()`
-        --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
+        defaults = {
+          layout_strategy = 'horizontal',
+          layout_config = {
+            horizontal = {
+              preview_width = 0.55,
+              prompt_position = 'top',
+            },
+            width = 0.90,
+            height = 0.85,
+          },
+          sorting_strategy = 'ascending',
+          winblend = 0,
+          path_display = { 'truncate' },
+          file_ignore_patterns = {
+            'node_modules/', '.git/', 'vendor/', '%.pb%.go',
+            'ds_instances_dump/', '%.min%.js', '%.min%.css',
+          },
+          mappings = {
+            i = {
+              ['<C-j>'] = actions.move_selection_next,
+              ['<C-k>'] = actions.move_selection_previous,
+              ['<C-q>'] = actions.send_selected_to_qflist + actions.open_qflist,
+              ['<C-enter>'] = 'to_fuzzy_refine',
+            },
+          },
+        },
+        pickers = {
+          live_grep = {
+            -- Show file:line in results like GoLand
+            additional_args = { '--line-number', '--column', '--smart-case' },
+          },
+          find_files = {
+            hidden = true,
+            follow = true,
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -402,6 +431,17 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      -- Grep only Go files (like GoLand's file mask *.go)
+      vim.keymap.set('n', '<leader>sG', function()
+        builtin.live_grep { type_filter = 'go' }
+      end, { desc = '[S]earch [G]rep in Go files' })
+      -- Grep with file type prompt
+      vim.keymap.set('n', '<leader>st', function()
+        local ft = vim.fn.input 'File type (go/py/yaml/json/...): '
+        if ft ~= '' then
+          builtin.live_grep { type_filter = ft }
+        end
+      end, { desc = '[S]earch with file [T]ype filter' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
@@ -968,6 +1008,9 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
+  install = { colorscheme = { 'catppuccin' } },
+  -- Increase timeout for slow builds/clones
+  git = { timeout = 300 },
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`

@@ -208,39 +208,132 @@ return {
         },
       }
 
+      -- Custom components for k8s and docker context
+      local function k8s_context()
+        local handle = io.popen('kubectl config current-context 2>/dev/null')
+        if handle then
+          local result = handle:read('*l')
+          handle:close()
+          if result and result ~= '' then
+            return '󱃾 ' .. result
+          end
+        end
+        return ''
+      end
+
+      -- Cache k8s context (expensive to shell out every render)
+      local k8s_cache = { value = '', updated = 0 }
+      local function k8s_cached()
+        local now = os.time()
+        if now - k8s_cache.updated > 30 then
+          k8s_cache.value = k8s_context()
+          k8s_cache.updated = now
+        end
+        return k8s_cache.value
+      end
+
+      local function lsp_name()
+        local clients = vim.lsp.get_clients and vim.lsp.get_clients { bufnr = 0 }
+            or vim.lsp.buf_get_clients(0)
+        if #clients == 0 then return '' end
+        local names = {}
+        for _, c in ipairs(clients) do
+          table.insert(names, c.name)
+        end
+        return ' ' .. table.concat(names, ', ')
+      end
+
+      local function docker_context()
+        local handle = io.popen('docker context show 2>/dev/null')
+        if handle then
+          local result = handle:read('*l')
+          handle:close()
+          if result and result ~= '' then
+            return ' ' .. result
+          end
+        end
+        return ''
+      end
+
+      local docker_cache = { value = '', updated = 0 }
+      local function docker_cached()
+        local now = os.time()
+        if now - docker_cache.updated > 30 then
+          docker_cache.value = docker_context()
+          docker_cache.updated = now
+        end
+        return docker_cache.value
+      end
+
+      local function go_version()
+        if vim.bo.filetype ~= 'go' then return '' end
+        return ' Go'
+      end
+
       require('lualine').setup {
         options = {
           theme = bubbles,
           component_separators = '',
           section_separators = { left = '', right = '' },
           globalstatus = true,
-          disabled_filetypes = { statusline = { 'dashboard' } },
+          disabled_filetypes = {
+            statusline = { 'dashboard', 'toggleterm' },
+            winbar = { 'dashboard', 'neo-tree', 'toggleterm', 'DiffviewFiles', 'noice' },
+          },
         },
         sections = {
-          -- Left: mode pill, then branch+diff pill
+          -- Left: mode pill → branch → diff
           lualine_a = {
             { 'mode', icon = '', separator = { left = '' }, right_padding = 2 },
           },
           lualine_b = {
-            { 'branch', icon = '' },
+            { 'branch', icon = '', separator = { left = '' } },
             { 'diff', symbols = { added = ' ', modified = ' ', removed = ' ' } },
           },
-          -- Center: filename (no background, floats on statusline)
+          -- Center: file + diagnostics
           lualine_c = {
             { 'filetype', icon_only = true, padding = { left = 1, right = 0 } },
             { 'filename', path = 1, symbols = { modified = ' ●', readonly = ' 󰌾' } },
-          },
-          -- Right: diagnostics, encoding, location pill
-          lualine_x = {
             {
               'diagnostics',
               sources = { 'nvim_lsp' },
               symbols = { error = ' ', warn = ' ', info = ' ', hint = '󰌵 ' },
+              separator = '',
             },
           },
-          lualine_y = { 'encoding', 'fileformat' },
+          -- Right: Copilot → LSP → Go → Docker → K8s → encoding → location
+          lualine_x = {
+            { 'copilot', show_colors = true, show_loading = true },
+            { lsp_name, color = { fg = colors.green } },
+            { go_version, color = { fg = colors.blue } },
+            { docker_cached, color = { fg = colors.blue } },
+            { k8s_cached, color = { fg = colors.mauve } },
+          },
+          lualine_y = {
+            { 'encoding', separator = { left = '' } },
+            'fileformat',
+          },
           lualine_z = {
+            { 'progress', separator = { left = '' } },
             { 'location', icon = '', separator = { right = '' }, left_padding = 2 },
+          },
+        },
+        -- Winbar: per-window file indicator (not on terminal/neo-tree)
+        winbar = {
+          lualine_c = {
+            { 'filetype', icon_only = true, padding = { left = 1, right = 0 } },
+            {
+              'filename',
+              path = 1,
+              symbols = { modified = ' ●', readonly = ' 󰌾' },
+              color = { gui = 'bold' },
+            },
+          },
+        },
+        inactive_winbar = {
+          lualine_c = {
+            { 'filetype', icon_only = true, padding = { left = 1, right = 0 } },
+            { 'filename', path = 1, color = { fg = colors.overlay } },
           },
         },
       }
